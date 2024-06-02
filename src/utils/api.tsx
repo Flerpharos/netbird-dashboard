@@ -179,7 +179,7 @@ function decodeToken<T = Object>(token: string): T | null {
  * @param token - Your JWT
  * @returns boolean
  */
-function isTokenExpired(token: string): boolean {
+function isExpired(token: string): boolean {
   const decodedToken: any = decodeToken(token);
   let result: boolean = true;
 
