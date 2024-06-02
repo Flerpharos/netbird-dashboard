@@ -6,7 +6,7 @@ import {
 import loadConfig from "@utils/config";
 import { sleep } from "@utils/helpers";
 import { usePathname } from "next/navigation";
-import { isExpired } from "react-jwt";
+// import { isExpired } from "react-jwt";
 import useSWR from "swr";
 import { useErrorBoundary } from "@/contexts/ErrorBoundary";
 
@@ -48,6 +48,51 @@ async function apiRequest<T>(
     }
     return res;
   }
+}
+
+function decodeToken<T = Object>(token: string): T | null {
+  try {
+    // if the token has more or less than 3 parts or is not a string
+    // then is not a valid token
+    if (typeof token !== "string" || token.split(".").length !== 3) {
+      return null;
+    }
+
+    // payload ( index 1 ) has the data stored and
+    // data about the expiration time
+    const payload: string = token.split(".")[1];
+
+    const base64Bytes: number[] = base64DecToArray(payload);
+    // Convert utf-8 array to string
+    const jsonPayload: string = decodeURIComponent(UTF8ArrToStr(base64Bytes));
+    // Parse JSON
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error("There was an error decoding token: ", error);
+    // Return null if something goes wrong
+    return null;
+  }
+}
+
+/**
+ * Verify if the token is expired or not
+ * @param token - Your JWT
+ * @returns boolean
+ */
+function isTokenExpired(token: string): boolean {
+  const decodedToken: any = decodeToken(token);
+  let result: boolean = true;
+
+  if (decodedToken && decodedToken.exp) {
+    const expirationDate: Date = new Date(0);
+    console.log(decodedToken)
+    console.log(`EXP ${decodedToken.exp}`)
+    expirationDate.setUTCSeconds(decodedToken.exp); // sets the expiration seconds
+    // compare the expiration time and the current time
+    result = expirationDate.valueOf() < new Date().valueOf();
+  }
+
+  return result;
 }
 
 export function useNetBirdFetch(ignoreError: boolean = false) {
